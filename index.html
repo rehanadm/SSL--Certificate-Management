@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="description" content="SSL Certificate Management guide by Abdul Rehan — OpenSSL, certificate conversion, chains, verification and Linux deployment.">
+<title>SSL Certificate Management | Abdul Rehan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<button id="themeToggle" class="theme-toggle">☾</button>
+<header class="hero"><div class="grid"></div><div class="hero-inner">
+<div class="eyebrow">INFRASTRUCTURE • SECURITY • AUTOMATION</div><div class="badge">OPENSSL · LINUX · SSL/TLS</div>
+<h1>SSL Certificate<br><span>Management</span></h1>
+<p>A practical enterprise reference for certificate conversion, extraction, chain building, verification, Linux deployment and SSL troubleshooting.</p>
+<div class="actions"><a class="btn primary" href="#guide">Explore Guide</a><a class="btn" href="https://github.com/rehanadm/SSL--Certificate-Management" target="_blank">⌘ View GitHub</a></div>
+<div class="meta"><span>✓ Certificate lifecycle</span><span>✓ OpenSSL commands</span><span>✓ Nginx / Apache / HAProxy</span></div>
+</div></header>
+<main class="container">
+<section class="section" id="guide"><div class="title"><b>01</b><div><h2>Certificate Lifecycle</h2><p>From certificate files to verified production deployment.</p></div></div>
+<div class="workflow">
+<article><i>01</i><h3>Understand</h3><p>Identify server, private key, intermediate and root certificates.</p></article>
+<article><i>02</i><h3>Convert</h3><p>Convert PFX, P12, DER and CER files into usable formats.</p></article>
+<article><i>03</i><h3>Build Chain</h3><p>Assemble server and CA certificates in the correct order.</p></article>
+<article><i>04</i><h3>Verify</h3><p>Check expiry, issuer, subject, chain validity and key matching.</p></article>
+<article><i>05</i><h3>Deploy</h3><p>Configure certificates on Nginx, Apache and HAProxy.</p></article>
+<article><i>06</i><h3>Troubleshoot</h3><p>Diagnose loading, key mismatch and incomplete-chain issues.</p></article>
+</div></section>
+<section class="section"><div class="title"><b>02</b><div><h2>Certificate Components</h2><p>The core files in a complete SSL/TLS deployment.</p></div></div>
+<div class="cards four">
+<article><strong>CRT</strong><h3>Server Certificate</h3><p>Issued for a specific domain and presented by the server.</p><code>server.crt</code></article>
+<article><strong>KEY</strong><h3>Private Key</h3><p>Used for encryption and certificate validation. Keep it secure.</p><code>server.key</code></article>
+<article><strong>CA</strong><h3>Intermediate</h3><p>CA certificate used to establish the trust chain.</p><code>intermediate.crt</code></article>
+<article><strong>ROOT</strong><h3>Root Certificate</h3><p>Top-level trusted CA certificate in the hierarchy.</p><code>root.crt</code></article>
+</div></section>
+<section class="section"><div class="title"><b>03</b><div><h2>Common Formats</h2><p>Quick reference for certificate and key file formats.</p></div></div>
+<div class="table"><div class="head"><span>Format</span><span>Extension</span><span>Contains</span></div>
+<div><b>PEM</b><span>.pem</span><span>Certificate, key or chain</span></div><div><b>CRT</b><span>.crt</span><span>Certificate</span></div><div><b>CER</b><span>.cer</span><span>Certificate</span></div><div><b>KEY</b><span>.key</span><span>Private Key</span></div><div><b>CSR</b><span>.csr</span><span>Certificate Signing Request</span></div><div><b>PFX / P12</b><span>.pfx / .p12</span><span>Certificate + Private Key + Chain</span></div><div><b>DER</b><span>.der</span><span>Binary Certificate</span></div><div><b>JKS</b><span>.jks</span><span>Java Keystore</span></div></div></section>
+<section class="section"><div class="title"><b>04</b><div><h2>OpenSSL Operations</h2><p>Frequently used commands from the management guide.</p></div></div>
+<div class="commands">
+<article><h3>Inspect Certificate</h3><pre>openssl x509 -in certificate.pem -text -noout
+openssl x509 -in certificate.pem -noout -enddate
+openssl x509 -in certificate.pem -noout -issuer
+openssl x509 -in certificate.pem -noout -subject</pre></article>
+<article><h3>PFX → PEM</h3><pre>openssl pkcs12 -in certificate.pfx \
+  -out certificate.pem -nodes</pre></article>
+<article><h3>Extract Certificate</h3><pre>openssl pkcs12 -in certificate.pfx \
+  -clcerts -nokeys -out server.crt</pre></article>
+<article><h3>Extract Private Key</h3><pre>openssl pkcs12 -in certificate.pfx \
+  -nocerts -nodes -out server.key</pre></article>
+<article><h3>Build Full Chain</h3><pre>cat server.crt \
+  intermediate.crt \
+  root.crt > fullchain.pem</pre></article>
+<article><h3>Verify Chain</h3><pre>openssl verify \
+  -CAfile fullchain.pem server.crt</pre></article>
+</div></section>
+<section class="section"><div class="title"><b>05</b><div><h2>Linux Deployment</h2><p>Examples for common web and load-balancing platforms.</p></div></div>
+<div class="deploy">
+<article><label>NGINX</label><pre>server {
+  listen 443 ssl;
+  ssl_certificate /etc/ssl/fullchain.pem;
+  ssl_certificate_key /etc/ssl/server.key;
+}
+
+nginx -t
+systemctl reload nginx</pre></article>
+<article><label>APACHE</label><pre>SSLCertificateFile /etc/httpd/ssl/server.crt
+SSLCertificateKeyFile /etc/httpd/ssl/server.key
+SSLCertificateChainFile /etc/httpd/ssl/intermediate.crt
+
+systemctl restart httpd</pre></article>
+<article><label>HAPROXY</label><pre>cat server.key server.crt \
+  intermediate.crt > haproxy.pem
+
+bind *:443 ssl crt /etc/haproxy/haproxy.pem
+systemctl restart haproxy</pre></article>
+</div></section>
+<section class="section"><div class="title"><b>06</b><div><h2>Troubleshooting</h2><p>Common SSL issues and first checks.</p></div></div>
+<div class="cards two"><article><i>01</i><h3>Unable to Load Certificate</h3><p>Inspect the certificate with OpenSSL and confirm the encoding is valid.</p></article><article><i>02</i><h3>Key Mismatch</h3><p>Compare certificate and private-key moduli to confirm they belong together.</p></article><article><i>03</i><h3>Incomplete Chain</h3><p>Use <code>openssl s_client</code> to inspect certificates presented by the server.</p></article><article><i>04</i><h3>Certificate Expired</h3><p>Check the certificate end date and renew before production expiration.</p></article></div></section>
+<section class="section"><div class="best"><div class="check">✓</div><div><h2>Production Best Practices</h2><ul><li>Keep private keys secure and never email private keys.</li><li>Maintain certificate inventory and automate expiry monitoring.</li><li>Verify certificate chains before deployment.</li><li>Use strong TLS versions and renew before expiration.</li><li>Store certificate and key backups securely.</li></ul></div></div></section>
+<section class="section"><div class="title"><b>07</b><div><h2>Quick Reference</h2><p>Essential commands from the complete README.</p></div></div><pre class="quick"># View certificate
+openssl x509 -in cert.pem -text -noout
+
+# Check expiry
+openssl x509 -in cert.pem -noout -enddate
+
+# PFX to PEM
+openssl pkcs12 -in cert.pfx -out cert.pem -nodes
+
+# Extract key
+openssl pkcs12 -in cert.pfx -nocerts -nodes -out key.pem
+
+# Verify chain
+openssl verify -CAfile fullchain.pem server.crt
+
+# Test SSL
+openssl s_client -connect hostname:443 -showcerts</pre></section>
+</main>
+<footer><div><b>SSL Certificate Management</b><span>Practical Linux & OpenSSL reference</span></div><a href="https://github.com/rehanadm/SSL--Certificate-Management" target="_blank">GitHub Repository ↗</a></footer>
+<script>const t=document.getElementById('themeToggle');if(localStorage.getItem('theme')==='light'){document.body.classList.add('light');t.textContent='☀'}t.onclick=()=>{document.body.classList.toggle('light');const l=document.body.classList.contains('light');localStorage.setItem('theme',l?'light':'dark');t.textContent=l?'☀':'☾'};const o=new IntersectionObserver(e=>e.forEach(x=>x.isIntersecting&&x.target.classList.add('show')),{threshold:.08});document.querySelectorAll('.section').forEach(x=>o.observe(x));</script>
+</body></html>

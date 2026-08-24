@@ -1,85 +1,722 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="description" content="SSL Certificate Management guide by Abdul Rehan — OpenSSL, certificate conversion, chains, verification and Linux deployment.">
-<title>SSL Certificate Management | Abdul Rehan</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SSL Certificate Management guide by Abdul Rehan — OpenSSL, certificate conversion, chains, verification and Linux deployment.">
+  <title>SSL Certificate Management | Abdul Rehan</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --text: #172033;
+      --muted: #637087;
+      --border: #e3e8f0;
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --accent-soft: #eff6ff;
+      --code: #111827;
+      --code-text: #e5e7eb;
+      --shadow: 0 12px 35px rgba(15, 23, 42, .07);
+      --radius: 16px;
+      --max: 1160px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    a { color: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255,255,255,.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+
+    .topbar-inner {
+      max-width: var(--max);
+      margin: auto;
+      min-height: 66px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: var(--accent);
+      color: white;
+      font-size: 17px;
+      box-shadow: 0 7px 16px rgba(37,99,235,.22);
+    }
+
+    .nav {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .nav a {
+      text-decoration: none;
+      color: var(--muted);
+      padding: 8px 11px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .nav a:hover { background: var(--accent-soft); color: var(--accent); }
+
+    .hero {
+      background:
+        radial-gradient(circle at 80% 15%, rgba(37,99,235,.12), transparent 30%),
+        linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-inner {
+      max-width: var(--max);
+      margin: auto;
+      padding: 88px 24px 82px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 28px;
+      height: 2px;
+      background: var(--accent);
+    }
+
+    .hero h1 {
+      max-width: 800px;
+      margin: 0;
+      font-size: clamp(42px, 6vw, 72px);
+      line-height: 1.05;
+      letter-spacing: -.055em;
+      font-weight: 800;
+    }
+
+    .hero h1 span { color: var(--accent); }
+
+    .hero p {
+      max-width: 720px;
+      margin: 24px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 32px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 20px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: white;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      transition: .2s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .btn.primary:hover { background: var(--accent-dark); }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 26px;
+      color: #718096;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .container {
+      max-width: var(--max);
+      margin: auto;
+      padding: 20px 24px 80px;
+    }
+
+    .section {
+      padding: 70px 0 10px;
+      scroll-margin-top: 75px;
+    }
+
+    .title {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .title > b {
+      flex: 0 0 auto;
+      min-width: 42px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 11px;
+      letter-spacing: .08em;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 27px;
+      line-height: 1.25;
+      letter-spacing: -.035em;
+    }
+
+    .title p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .workflow {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .workflow article,
+    .cards article,
+    .commands article,
+    .deploy article {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 18px rgba(15,23,42,.035);
+    }
+
+    .workflow article {
+      min-height: 165px;
+      padding: 24px;
+    }
+
+    .workflow i,
+    .cards i {
+      display: inline-grid;
+      place-items: center;
+      width: 29px;
+      height: 29px;
+      margin-bottom: 17px;
+      border-radius: 8px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 11px;
+      font-style: normal;
+      font-weight: 800;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.35;
+      letter-spacing: -.015em;
+    }
+
+    article p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .cards.four {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .cards.two {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .cards article {
+      padding: 24px;
+    }
+
+    .cards strong {
+      display: block;
+      margin-bottom: 15px;
+      color: var(--accent);
+      font: 600 12px/1.2 "JetBrains Mono", monospace;
+      letter-spacing: .08em;
+    }
+
+    code, pre {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .cards code {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      color: #475569;
+      font-size: 11px;
+    }
+
+    .table {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: white;
+      box-shadow: var(--shadow);
+    }
+
+    .table > div {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 3fr;
+      gap: 20px;
+      align-items: center;
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .table > div:last-child { border-bottom: 0; }
+    .table .head {
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+    }
+
+    .table span:nth-child(2) {
+      color: var(--accent);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+    }
+
+    .commands {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .commands article,
+    .deploy article {
+      overflow: hidden;
+    }
+
+    .commands h3,
+    .deploy label {
+      display: block;
+      padding: 18px 20px;
+      margin: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    pre {
+      margin: 0;
+      padding: 19px 20px;
+      background: var(--code);
+      color: var(--code-text);
+      font-size: 11.5px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+
+    .deploy {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .deploy label {
+      color: var(--accent);
+      letter-spacing: .08em;
+      font-size: 11px;
+    }
+
+    .best {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 20px;
+      padding: 30px;
+      border: 1px solid #cfe0ff;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #eff6ff, #ffffff);
+    }
+
+    .check {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      background: var(--accent);
+      color: white;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .best ul {
+      margin: 18px 0 0;
+      padding-left: 20px;
+      color: #526174;
+      font-size: 13px;
+      line-height: 2;
+    }
+
+    .quick {
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      background: white;
+    }
+
+    .footer-inner {
+      max-width: var(--max);
+      margin: auto;
+      padding: 30px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    footer b { font-size: 13px; }
+    footer span {
+      margin-left: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity .55s ease, transform .55s ease;
+    }
+
+    .reveal.show {
+      opacity: 1;
+      transform: none;
+    }
+
+    @media (max-width: 900px) {
+      .nav { display: none; }
+      .workflow,
+      .cards.four { grid-template-columns: repeat(2, 1fr); }
+      .deploy { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 650px) {
+      body { font-size: 14px; }
+      .hero-inner { padding: 62px 20px 58px; }
+      .container { padding-left: 20px; padding-right: 20px; }
+      .hero h1 { font-size: 44px; }
+      .hero p { font-size: 15px; }
+      .section { padding-top: 54px; }
+      .workflow,
+      .cards.four,
+      .cards.two,
+      .commands { grid-template-columns: 1fr; }
+      .table { overflow-x: auto; }
+      .table > div { min-width: 580px; }
+      .footer-inner { align-items: flex-start; flex-direction: column; }
+      footer span { display: block; margin: 5px 0 0; }
+    }
+  </style>
 </head>
+
 <body>
-<button id="themeToggle" class="theme-toggle">☾</button>
-<header class="hero"><div class="grid"></div><div class="hero-inner">
-<div class="eyebrow">INFRASTRUCTURE • SECURITY • AUTOMATION</div><div class="badge">OPENSSL · LINUX · SSL/TLS</div>
-<h1>SSL Certificate<br><span>Management</span></h1>
-<p>A practical enterprise reference for certificate conversion, extraction, chain building, verification, Linux deployment and SSL troubleshooting.</p>
-<div class="actions"><a class="btn primary" href="#guide">Explore Guide</a><a class="btn" href="https://github.com/rehanadm/SSL--Certificate-Management" target="_blank">⌘ View GitHub</a></div>
-<div class="meta"><span>✓ Certificate lifecycle</span><span>✓ OpenSSL commands</span><span>✓ Nginx / Apache / HAProxy</span></div>
-</div></header>
-<main class="container">
-<section class="section" id="guide"><div class="title"><b>01</b><div><h2>Certificate Lifecycle</h2><p>From certificate files to verified production deployment.</p></div></div>
-<div class="workflow">
-<article><i>01</i><h3>Understand</h3><p>Identify server, private key, intermediate and root certificates.</p></article>
-<article><i>02</i><h3>Convert</h3><p>Convert PFX, P12, DER and CER files into usable formats.</p></article>
-<article><i>03</i><h3>Build Chain</h3><p>Assemble server and CA certificates in the correct order.</p></article>
-<article><i>04</i><h3>Verify</h3><p>Check expiry, issuer, subject, chain validity and key matching.</p></article>
-<article><i>05</i><h3>Deploy</h3><p>Configure certificates on Nginx, Apache and HAProxy.</p></article>
-<article><i>06</i><h3>Troubleshoot</h3><p>Diagnose loading, key mismatch and incomplete-chain issues.</p></article>
-</div></section>
-<section class="section"><div class="title"><b>02</b><div><h2>Certificate Components</h2><p>The core files in a complete SSL/TLS deployment.</p></div></div>
-<div class="cards four">
-<article><strong>CRT</strong><h3>Server Certificate</h3><p>Issued for a specific domain and presented by the server.</p><code>server.crt</code></article>
-<article><strong>KEY</strong><h3>Private Key</h3><p>Used for encryption and certificate validation. Keep it secure.</p><code>server.key</code></article>
-<article><strong>CA</strong><h3>Intermediate</h3><p>CA certificate used to establish the trust chain.</p><code>intermediate.crt</code></article>
-<article><strong>ROOT</strong><h3>Root Certificate</h3><p>Top-level trusted CA certificate in the hierarchy.</p><code>root.crt</code></article>
-</div></section>
-<section class="section"><div class="title"><b>03</b><div><h2>Common Formats</h2><p>Quick reference for certificate and key file formats.</p></div></div>
-<div class="table"><div class="head"><span>Format</span><span>Extension</span><span>Contains</span></div>
-<div><b>PEM</b><span>.pem</span><span>Certificate, key or chain</span></div><div><b>CRT</b><span>.crt</span><span>Certificate</span></div><div><b>CER</b><span>.cer</span><span>Certificate</span></div><div><b>KEY</b><span>.key</span><span>Private Key</span></div><div><b>CSR</b><span>.csr</span><span>Certificate Signing Request</span></div><div><b>PFX / P12</b><span>.pfx / .p12</span><span>Certificate + Private Key + Chain</span></div><div><b>DER</b><span>.der</span><span>Binary Certificate</span></div><div><b>JKS</b><span>.jks</span><span>Java Keystore</span></div></div></section>
-<section class="section"><div class="title"><b>04</b><div><h2>OpenSSL Operations</h2><p>Frequently used commands from the management guide.</p></div></div>
-<div class="commands">
-<article><h3>Inspect Certificate</h3><pre>openssl x509 -in certificate.pem -text -noout
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#">
+        <span class="brand-mark">S</span>
+        <span>SSL Certificate Management</span>
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="#guide">Lifecycle</a>
+        <a href="#formats">Formats</a>
+        <a href="#openssl">OpenSSL</a>
+        <a href="#deployment">Deployment</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+      </nav>
+    </div>
+  </header>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Infrastructure • Security • Automation</div>
+      <h1>SSL Certificate <span>Management</span></h1>
+      <p>
+        A practical enterprise reference for certificate conversion, extraction,
+        chain building, verification, Linux deployment and SSL troubleshooting.
+      </p>
+
+      <div class="actions">
+        <a class="btn primary" href="#guide">Explore Guide</a>
+        <a class="btn" href="https://github.com/rehanadm/SSL--Certificate-Management" target="_blank" rel="noopener">View GitHub ↗</a>
+      </div>
+
+      <div class="meta">
+        <span>✓ Certificate lifecycle</span>
+        <span>✓ OpenSSL commands</span>
+        <span>✓ Nginx / Apache / HAProxy</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="section reveal" id="guide">
+      <div class="title">
+        <b>01</b>
+        <div>
+          <h2>Certificate Lifecycle</h2>
+          <p>From certificate files to verified production deployment.</p>
+        </div>
+      </div>
+
+      <div class="workflow">
+        <article><i>01</i><h3>Understand</h3><p>Identify server, private key, intermediate and root certificates.</p></article>
+        <article><i>02</i><h3>Convert</h3><p>Convert PFX, P12, DER and CER files into usable formats.</p></article>
+        <article><i>03</i><h3>Build Chain</h3><p>Assemble server and CA certificates in the correct order.</p></article>
+        <article><i>04</i><h3>Verify</h3><p>Check expiry, issuer, subject, chain validity and key matching.</p></article>
+        <article><i>05</i><h3>Deploy</h3><p>Configure certificates on Nginx, Apache and HAProxy.</p></article>
+        <article><i>06</i><h3>Troubleshoot</h3><p>Diagnose loading, key mismatch and incomplete-chain issues.</p></article>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="title">
+        <b>02</b>
+        <div>
+          <h2>Certificate Components</h2>
+          <p>The core files in a complete SSL/TLS deployment.</p>
+        </div>
+      </div>
+
+      <div class="cards four">
+        <article><strong>CRT</strong><h3>Server Certificate</h3><p>Issued for a specific domain and presented by the server.</p><code>server.crt</code></article>
+        <article><strong>KEY</strong><h3>Private Key</h3><p>Used for encryption and certificate validation. Keep it secure.</p><code>server.key</code></article>
+        <article><strong>CA</strong><h3>Intermediate</h3><p>CA certificate used to establish the trust chain.</p><code>intermediate.crt</code></article>
+        <article><strong>ROOT</strong><h3>Root Certificate</h3><p>Top-level trusted CA certificate in the hierarchy.</p><code>root.crt</code></article>
+      </div>
+    </section>
+
+    <section class="section reveal" id="formats">
+      <div class="title">
+        <b>03</b>
+        <div>
+          <h2>Common Formats</h2>
+          <p>Quick reference for certificate and key file formats.</p>
+        </div>
+      </div>
+
+      <div class="table">
+        <div class="head"><span>Format</span><span>Extension</span><span>Contains</span></div>
+        <div><b>PEM</b><span>.pem</span><span>Certificate, key or chain</span></div>
+        <div><b>CRT</b><span>.crt</span><span>Certificate</span></div>
+        <div><b>CER</b><span>.cer</span><span>Certificate</span></div>
+        <div><b>KEY</b><span>.key</span><span>Private Key</span></div>
+        <div><b>CSR</b><span>.csr</span><span>Certificate Signing Request</span></div>
+        <div><b>PFX / P12</b><span>.pfx / .p12</span><span>Certificate + Private Key + Chain</span></div>
+        <div><b>DER</b><span>.der</span><span>Binary Certificate</span></div>
+        <div><b>JKS</b><span>.jks</span><span>Java Keystore</span></div>
+      </div>
+    </section>
+
+    <section class="section reveal" id="openssl">
+      <div class="title">
+        <b>04</b>
+        <div>
+          <h2>OpenSSL Operations</h2>
+          <p>Frequently used commands from the management guide.</p>
+        </div>
+      </div>
+
+      <div class="commands">
+        <article><h3>Inspect Certificate</h3><pre>openssl x509 -in certificate.pem -text -noout
 openssl x509 -in certificate.pem -noout -enddate
 openssl x509 -in certificate.pem -noout -issuer
 openssl x509 -in certificate.pem -noout -subject</pre></article>
-<article><h3>PFX → PEM</h3><pre>openssl pkcs12 -in certificate.pfx \
+
+        <article><h3>PFX → PEM</h3><pre>openssl pkcs12 -in certificate.pfx \
   -out certificate.pem -nodes</pre></article>
-<article><h3>Extract Certificate</h3><pre>openssl pkcs12 -in certificate.pfx \
+
+        <article><h3>Extract Certificate</h3><pre>openssl pkcs12 -in certificate.pfx \
   -clcerts -nokeys -out server.crt</pre></article>
-<article><h3>Extract Private Key</h3><pre>openssl pkcs12 -in certificate.pfx \
+
+        <article><h3>Extract Private Key</h3><pre>openssl pkcs12 -in certificate.pfx \
   -nocerts -nodes -out server.key</pre></article>
-<article><h3>Build Full Chain</h3><pre>cat server.crt \
+
+        <article><h3>Build Full Chain</h3><pre>cat server.crt \
   intermediate.crt \
-  root.crt > fullchain.pem</pre></article>
-<article><h3>Verify Chain</h3><pre>openssl verify \
+  root.crt &gt; fullchain.pem</pre></article>
+
+        <article><h3>Verify Chain</h3><pre>openssl verify \
   -CAfile fullchain.pem server.crt</pre></article>
-</div></section>
-<section class="section"><div class="title"><b>05</b><div><h2>Linux Deployment</h2><p>Examples for common web and load-balancing platforms.</p></div></div>
-<div class="deploy">
-<article><label>NGINX</label><pre>server {
+      </div>
+    </section>
+
+    <section class="section reveal" id="deployment">
+      <div class="title">
+        <b>05</b>
+        <div>
+          <h2>Linux Deployment</h2>
+          <p>Examples for common web and load-balancing platforms.</p>
+        </div>
+      </div>
+
+      <div class="deploy">
+        <article>
+          <label>NGINX</label>
+          <pre>server {
   listen 443 ssl;
   ssl_certificate /etc/ssl/fullchain.pem;
   ssl_certificate_key /etc/ssl/server.key;
 }
 
 nginx -t
-systemctl reload nginx</pre></article>
-<article><label>APACHE</label><pre>SSLCertificateFile /etc/httpd/ssl/server.crt
+systemctl reload nginx</pre>
+        </article>
+
+        <article>
+          <label>APACHE</label>
+          <pre>SSLCertificateFile /etc/httpd/ssl/server.crt
 SSLCertificateKeyFile /etc/httpd/ssl/server.key
 SSLCertificateChainFile /etc/httpd/ssl/intermediate.crt
 
-systemctl restart httpd</pre></article>
-<article><label>HAPROXY</label><pre>cat server.key server.crt \
-  intermediate.crt > haproxy.pem
+systemctl restart httpd</pre>
+        </article>
+
+        <article>
+          <label>HAPROXY</label>
+          <pre>cat server.key server.crt \
+  intermediate.crt &gt; haproxy.pem
 
 bind *:443 ssl crt /etc/haproxy/haproxy.pem
-systemctl restart haproxy</pre></article>
-</div></section>
-<section class="section"><div class="title"><b>06</b><div><h2>Troubleshooting</h2><p>Common SSL issues and first checks.</p></div></div>
-<div class="cards two"><article><i>01</i><h3>Unable to Load Certificate</h3><p>Inspect the certificate with OpenSSL and confirm the encoding is valid.</p></article><article><i>02</i><h3>Key Mismatch</h3><p>Compare certificate and private-key moduli to confirm they belong together.</p></article><article><i>03</i><h3>Incomplete Chain</h3><p>Use <code>openssl s_client</code> to inspect certificates presented by the server.</p></article><article><i>04</i><h3>Certificate Expired</h3><p>Check the certificate end date and renew before production expiration.</p></article></div></section>
-<section class="section"><div class="best"><div class="check">✓</div><div><h2>Production Best Practices</h2><ul><li>Keep private keys secure and never email private keys.</li><li>Maintain certificate inventory and automate expiry monitoring.</li><li>Verify certificate chains before deployment.</li><li>Use strong TLS versions and renew before expiration.</li><li>Store certificate and key backups securely.</li></ul></div></div></section>
-<section class="section"><div class="title"><b>07</b><div><h2>Quick Reference</h2><p>Essential commands from the complete README.</p></div></div><pre class="quick"># View certificate
+systemctl restart haproxy</pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="section reveal" id="troubleshooting">
+      <div class="title">
+        <b>06</b>
+        <div>
+          <h2>Troubleshooting</h2>
+          <p>Common SSL issues and first checks.</p>
+        </div>
+      </div>
+
+      <div class="cards two">
+        <article><i>01</i><h3>Unable to Load Certificate</h3><p>Inspect the certificate with OpenSSL and confirm the encoding is valid.</p></article>
+        <article><i>02</i><h3>Key Mismatch</h3><p>Compare certificate and private-key moduli to confirm they belong together.</p></article>
+        <article><i>03</i><h3>Incomplete Chain</h3><p>Use <code>openssl s_client</code> to inspect certificates presented by the server.</p></article>
+        <article><i>04</i><h3>Certificate Expired</h3><p>Check the certificate end date and renew before production expiration.</p></article>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="best">
+        <div class="check">✓</div>
+        <div>
+          <h2>Production Best Practices</h2>
+          <ul>
+            <li>Keep private keys secure and never email private keys.</li>
+            <li>Maintain certificate inventory and automate expiry monitoring.</li>
+            <li>Verify certificate chains before deployment.</li>
+            <li>Use strong TLS versions and renew before expiration.</li>
+            <li>Store certificate and key backups securely.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="title">
+        <b>07</b>
+        <div>
+          <h2>Quick Reference</h2>
+          <p>Essential commands from the complete README.</p>
+        </div>
+      </div>
+
+      <pre class="quick"># View certificate
 openssl x509 -in cert.pem -text -noout
 
 # Check expiry
@@ -95,8 +732,29 @@ openssl pkcs12 -in cert.pfx -nocerts -nodes -out key.pem
 openssl verify -CAfile fullchain.pem server.crt
 
 # Test SSL
-openssl s_client -connect hostname:443 -showcerts</pre></section>
-</main>
-<footer><div><b>SSL Certificate Management</b><span>Practical Linux & OpenSSL reference</span></div><a href="https://github.com/rehanadm/SSL--Certificate-Management" target="_blank">GitHub Repository ↗</a></footer>
-<script>const t=document.getElementById('themeToggle');if(localStorage.getItem('theme')==='light'){document.body.classList.add('light');t.textContent='☀'}t.onclick=()=>{document.body.classList.toggle('light');const l=document.body.classList.contains('light');localStorage.setItem('theme',l?'light':'dark');t.textContent=l?'☀':'☾'};const o=new IntersectionObserver(e=>e.forEach(x=>x.isIntersecting&&x.target.classList.add('show')),{threshold:.08});document.querySelectorAll('.section').forEach(x=>o.observe(x));</script>
-</body></html>
+openssl s_client -connect hostname:443 -showcerts</pre>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div>
+        <b>SSL Certificate Management</b>
+        <span>Practical Linux &amp; OpenSSL reference</span>
+      </div>
+      <a href="https://github.com/rehanadm/SSL--Certificate-Management" target="_blank" rel="noopener">GitHub Repository ↗</a>
+    </div>
+  </footer>
+
+  <script>
+    const observer = new IntersectionObserver(
+      entries => entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add("show");
+      }),
+      { threshold: 0.08 }
+    );
+
+    document.querySelectorAll(".reveal").forEach(section => observer.observe(section));
+  </script>
+</body>
+</html>
